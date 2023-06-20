@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 import io
 import os
@@ -12,25 +13,15 @@ def reduce_size(
         ext: str | None = None,
         delete: bool = False):
     image = Image.open(filename)
-    # Set the target file size in bytes (2 MB = 2,000,000 bytes)
-    target_size = 2000000
+    target_size = 1000000
 
-    # Iterate and reduce the image quality until the target size is reached
-    quality = 90  # Initial quality value
+    quality = 90
     while True:
-        # Create a buffer to hold the resized image
         image_buffer = io.BytesIO()
-        # Save the image with the current quality value to the buffer
         image.save(image_buffer, format='JPEG', quality=quality)
-
-        # Get the size of the image buffer
         image_size = image_buffer.tell()
-
-        # If the size is within the target range, break the loop
         if image_size <= target_size:
             break
-
-        # Reduce the quality by 10% for the next iteration
         quality -= 10
 
     if directory is None:
@@ -45,7 +36,6 @@ def reduce_size(
         ext = basic.get_file_extension(filename)
         delete = True
 
-    # Save the final resized image to a files
     image.save(f'{directory}/{name}{ext}', format='JPEG', quality=quality)
     if delete:
         os.remove(filename)

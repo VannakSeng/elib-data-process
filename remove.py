@@ -2,12 +2,13 @@ import os
 
 import basic
 
-path = 'C:\\Users\\MSI\\OneDrive - Royal University of Phnom Penh\\e-library of cambodia\\Backup\\0Scan'
+path = '/Volumes/Docker/Elib/1_Fonds_Periodicques_Khmer_PDF'
 files = basic.browse_files(path)
 
-for f in files:
-    if '..tif' not in f:
-        try:
-            os.remove(f)
-        except:
-            print(f)
+basic.get_cover_pdf(files[0])
+# for f in files:
+#     if '..tif' not in f:
+#         # try:
+#         #     os.remove(f)
+#         # except:
+#             print(f)
