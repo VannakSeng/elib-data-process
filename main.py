@@ -1,7 +1,7 @@
 import io
 import os
 from PIL import Image
-from difPy import dif
+# from difPy import dif
 
 from basic import get_file_extension, browse_files
 

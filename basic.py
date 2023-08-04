@@ -1,6 +1,8 @@
+import io
 import os
+
 import fitz
-import base64, requests, json
+from PIL import Image
 
 
 def browse_files(path: str, current: bool = False) -> list[str]:
@@ -26,6 +28,24 @@ def get_name_file(filename: str) -> str:
     return name
 
 
+def reduce_size(filename: str, target_size: int = 1000000):
+    img = Image.open(filename)
+    quality = 90
+    image_size = 0
+    while True:
+        image_buffer = io.BytesIO()
+        img.save(image_buffer, format='JPEG', quality=quality)
+        size = image_buffer.tell()
+        if image_size != size:
+            image_size = size
+        else:
+            break
+        if image_size <= target_size:
+            break
+        quality -= 10
+    img.save(filename, format='JPEG', quality=quality)
+
+
 def get_path(filename: str) -> str:
     return os.path.dirname(os.path.abspath(filename))
 
@@ -44,51 +64,42 @@ def save_pdf_cover(filename: str):
     pix.save(f"{path}/{name}.png")
 
 
-def get_header():
-    credentials = 'seng.vannak:kXhe Acl0 isu6 UzK5 3Al8 yPY4'
-    token = base64.b64encode(credentials.encode()).decode('utf-8')
-    header_json = {'Authorization': f'Basic {token}'}
-    return header_json
+def read_file(file_name: str) -> [str]:
+    with open(file_name) as f:
+        return f.readlines()
 
 
-def post_media(filename: str) -> any:
-    url = 'https://www.elibraryofcambodia.org/wp-json/wp/v2/media'
-    header_json = get_header()
-    name = get_name_file(filename)
-    media = {'file': open(filename, "rb"), 'caption': name, 'title': name}
-    res = requests.post(url, headers=header_json, files=media)
-    if res.ok:
-        body = res.json()
-        return {
-            'id': body['id'],
-            'render': body['guid']['rendered']
-        }
+def write_file(file_name: str, text: str):
+    with open(file_name, "a") as my_file:
+        my_file.write(text)
 
-
-def post_newspaper(filename: str):
-    url = 'https://www.elibraryofcambodia.org/wp-json/wp/v2/document'
-    header_json = get_header()
-    name = get_name_file(filename)
-    media = post_media(filename.replace('.pdf', '.png'))['id']
-    pdf = post_media(filename)
-    content = f'[pdfjs-viewer url="{pdf["render"]}" attachment_id="{pdf["id"]}" viewer_width=100% viewer_height=800px fullscreen=true download=true print=true]'
-    document = {
-        'title': name,
-        'content': content,
-        'featured_media': media,
-        'status': 'publish',
-        "meta": {
-            "document-types": [609]
-        }
-    }
-    res = requests.post(url, headers=header_json, data=document)
-    print(f'finished {res.json()["id"]}')
-
-
-path = '/Volumes/Docker/Elib/1_Fonds_Periodicques_Khmer_PDF'
-for dir_name in os.listdir(path):
-    if (dir_name.endswith('.pdf')):
-        filename = f'{path}/{dir_name}'
-        # basic.save_pdf_cover(filename)
-        post_newspaper(filename)
+# path = "/Users/stone-wh/Library/CloudStorage/OneDrive-RoyalUniversityofPhnomPenh/e-library of cambodia/Backup/1_Fonds_Periodicques_Khmer_PDF/Ready"
+# text = ''
+# var = 0
+# jpg = 0
+# all = 0
+# for dir_name in os.listdir(path):
+#     filename = f'{path}/{dir_name}'
+#     all +=1
+#     if (dir_name.endswith('.bmp')):
+#         reduce_size(filename)
+#         new_file = filename.replace('.bmp', '.jpg')
+#         os.rename(filename, new_file)
+#     elif (dir_name.endswith('.png')):
+#         new_file = filename.replace('.png', '.jpg')
+#         os.rename(filename, new_file)
+#     elif (dir_name.endswith('.jpg')):
+#         jpg += 1
+#     elif (dir_name.endswith('.pdf')):
+#         img_file = filename.replace('.pdf', '.jpg')
+#         if os.path.isfile(img_file):
+#             print('check_file')
+#             var += 1
+# print(var)
+# print(jpg)
+# print(all)
+# text = f"{text}{filename.replace('/', ',')}\n"
+# # save_pdf_cover(filename)
+# post_newspaper(filename)
 # post_newspaper('/Volumes/Docker/Elib/1_Fonds_Periodicques_Khmer_PDF/35. Lami de lecole de pali 1ans3.pdf')
+# write_file('/Users/stone-wh/Library/CloudStorage/OneDrive-RoyalUniversityofPhnomPenh/e-library of cambodia/publish.csv', text)
