@@ -1,14 +1,31 @@
-import io
 import multiprocessing
 import os
 import time
+from tkinter import filedialog
+from tkinter import *
+import io
 
 from PIL import Image
 from PyPDF2 import PageObject, PdfFileReader, PdfFileWriter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
-import basic
+def reduce_size(filename: str, target_size: int = 1000000):
+    img = Image.open(filename)
+    quality = 90
+    image_size = 0
+    while True:
+        image_buffer = io.BytesIO()
+        img.save(image_buffer, format='JPEG', quality=quality)
+        size = image_buffer.tell()
+        if image_size != size:
+            image_size = size
+        else:
+            break
+        if image_size <= target_size:
+            break
+        quality -= 10
+    img.save(filename, format='JPEG', quality=quality)
 
 
 def watermark(w: float, h: float) -> PageObject:
@@ -34,7 +51,7 @@ def new_page_image(w: float, h: float, path: str) -> PageObject:
     return result
 
 
-def set_watermark(path: str, filename: str):
+def set_watermark(path: str, filename: str, compress: bool = False):
     print(f'start {filename}')
     target_path = f'{path}_Watermarks'
     input_file = f'{path}/{filename}'
@@ -45,9 +62,11 @@ def set_watermark(path: str, filename: str):
     output = PdfFileWriter()
     watermark_page = None
     for page in existing_pdf.pages:
+
         with open(temp_filename, "wb") as output_stream:
             output_stream.write(page.images[0].data)
-        basic.reduce_size(temp_filename, 200000)
+        if compress:
+            reduce_size(temp_filename, 200000)
         im = Image.open(temp_filename)
         width, height = im.size
         if watermark_page is None:
@@ -60,17 +79,27 @@ def set_watermark(path: str, filename: str):
         output.write(output_stream)
     print(f'finished {filename}')
     os.remove(temp_filename)
-    return temp_filename
+    return filename
 
 
-if __name__ == '__main__':
-    root_path = '/Users/stone-wh/Library/CloudStorage/OneDrive-RoyalUniversityofPhnomPenh/e-library of cambodia/Backup/1_Fonds_Periodicques_Khmer_PDF'
-    path = f"{root_path}/Ready"
-    dirs = os.listdir(path)
-    start = time.time()
+def browse_button():
+    source_path = filedialog.askdirectory()
+    folder_path.set(source_path)
+    dirs = os.listdir(source_path)
     with multiprocessing.Pool() as pool:
-        items = [(path, dir_name) for dir_name in dirs if dir_name.endswith('.pdf')]
+        items = [(source_path, dir_name) for dir_name in dirs if dir_name.endswith('.pdf')]
         for result in pool.starmap(set_watermark, items):
             print(result)
-    end = time.time()
-    print(end - start)
+
+
+root = Tk()
+root.geometry("300x200")
+root.title('PDF compressor')
+root.configure(background='white')
+folder_path = StringVar()
+lbl1 = Label(master=root, textvariable=folder_path)
+lbl1.grid(row=0, column=1)
+button2 = Button(text="Browse", command=browse_button)
+button2.grid(row=0, column=3)
+
+mainloop()

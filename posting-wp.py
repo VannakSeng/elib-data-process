@@ -1,3 +1,4 @@
+import os
 import basic
 import base64
 import requests
@@ -24,12 +25,12 @@ def post_media(filename: str) -> any:
         }
 
 
-def post_newspaper(filename: str):
+def post_newspaper(file_name: str):
     url = 'https://www.elibraryofcambodia.org/wp-json/wp/v2/document'
     header_json = get_header()
-    name = basic.get_name_file(filename)
-    media = post_media(filename.replace('.pdf', '.jpg'))['id']
-    pdf = post_media(filename)
+    name = basic.get_name_file(file_name)
+    media = post_media(file_name.replace('.pdf', '.jpg'))['id']
+    pdf = post_media(file_name)
     content = f'[pdfjs-viewer url="{pdf["render"]}" attachment_id="{pdf["id"]}" viewer_width=100% viewer_height=800px fullscreen=true download=true print=true]'
     document = {
         'title': name,
@@ -42,3 +43,15 @@ def post_newspaper(filename: str):
     }
     res = requests.post(url, headers=header_json, data=document)
     print(f'finished {res.json()["id"]}')
+
+path = "/Users/stone-wh/Library/CloudStorage/OneDrive-RoyalUniversityofPhnomPenh/e-library of cambodia/Backup/1_Fonds_Periodicques_Khmer_PDF/Ready"
+index = 0
+for dir_name in sorted(os.listdir(path)):
+    filename = f'{path}/{dir_name}'
+    if dir_name.endswith('.pdf'):
+        index += 1
+        if index < 66:
+            continue
+        print(index, dir_name)
+
+        post_newspaper(filename)
