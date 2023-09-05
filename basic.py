@@ -1,21 +1,33 @@
 import io
 import os
+import re
+import uuid
 
 import fitz
 from PIL import Image
 
 
-def browse_files(path: str, current: bool = False) -> list[str]:
+def browse_files(path: str, endswith: str, is_full_path: bool = True) -> list[str]:
     files = []
-    for (dirs, dir_names, filenames) in os.walk(path):
-        for filename in filenames:
-            files.append(f'{dirs}/{filename}')
-        if current:
-            return files
-        for dir_name in dir_names:
-            sub_files = browse_files(f'{dirs}/{dir_name}')
-            files = files + sub_files
+    for file in os.listdir(path):
+        if file.endswith(endswith):
+            if is_full_path:
+                files.append(f'{path}/{file}')
+            else:
+                files.append(file)
     return files
+
+
+def browse_folders(path: str, is_full_path: bool = True) -> list[str]:
+    folders = []
+    for dir_name in os.listdir(path):
+        full_path = f'{path}/{dir_name}'
+        if os.path.isdir(full_path):
+            if is_full_path:
+                folders.append(f'{path}/{dir_name}')
+            else:
+                folders.append(dir_name)
+    return folders
 
 
 def get_file_extension(file_path: str) -> str:
@@ -50,18 +62,19 @@ def get_path(filename: str) -> str:
     return os.path.dirname(os.path.abspath(filename))
 
 
-def save_pdf_cover(filename: str):
+def save_pdf_cover(filename: str, page_index: int = 0) -> str:
     doc = fitz.open(filename)
-    pix = doc[0].get_pixmap(
+    pix = doc[page_index].get_pixmap(
         matrix=fitz.Identity,
         dpi=None,
         colorspace=fitz.csRGB,
         clip=None,
         alpha=True,
         annots=True)
-    path = get_path(filename)
-    name = get_name_file(filename)
-    pix.save(f"{path}/{name}.png")
+    # new_filename = filename.replace('.pdf', '.png')
+    new_filename = f'temp/{uuid.uuid4()}.png'
+    pix.save(new_filename)
+    return new_filename
 
 
 def read_file(file_name: str) -> [str]:

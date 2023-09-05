@@ -1,17 +1,16 @@
 import io
-import multiprocessing
 import os
-import time
+import shutil
 
 from PIL import Image
 from PyPDF2 import PageObject, PdfFileReader, PdfFileWriter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
-
+import uuid
 import basic
 
 
-def watermark(w: float, h: float) -> PageObject:
+def __watermark(w: float, h: float) -> PageObject:
     packet = io.BytesIO()
     can = canvas.Canvas(packet, pagesize=(w, h))
     can.setFillColorRGB(10, 10, 10, 0.4)
@@ -30,47 +29,66 @@ def new_page_image(w: float, h: float, path: str) -> PageObject:
     can.drawImage(img, 0, 0, w, h)
     can.save()
     packet.seek(0)
-    result = PdfFileReader(packet).pages[0]
-    return result
+    return PdfFileReader(packet).pages[0]
 
 
-def set_watermark(path: str, filename: str):
-    print(f'start {filename}')
-    target_path = f'{path}_Watermarks'
-    input_file = f'{path}/{filename}'
-    temp_filename = f'{target_path}/temp_{time.time()}.png'
-    if not os.path.exists(target_path):
-        os.mkdir(target_path)
-    existing_pdf = PdfFileReader(open(input_file, "rb"), strict=False)
-    output = PdfFileWriter()
+def pdf_set_watermark(source: str, target: str, target_size: int = None):
+    print(f'start process {source}')
+    if not source.endswith('.pdf'):
+        print(f"Error not PDF file of {source}")
+        return
+    if not os.path.exists(source):
+        print(f"Error file not found of {source}")
+        return
+    source_pdf = PdfFileReader(open(source, "rb"), strict=False)
+    target_pdf = PdfFileWriter()
     watermark_page = None
-    for page in existing_pdf.pages:
+    i = 0
+    temp_filename = f'temp/{uuid.uuid4()}.png'
+    for page in source_pdf.pages:
         with open(temp_filename, "wb") as output_stream:
-            output_stream.write(page.images[0].data)
-        basic.reduce_size(temp_filename, 200000)
-        im = Image.open(temp_filename)
-        width, height = im.size
+            output_stream.write(page.images[i].data)
+        if target_size is not None:
+            basic.reduce_size(temp_filename, target_size)
+        width, height = Image.open(temp_filename).size
         if watermark_page is None:
-            watermark_page = watermark(width, height)
+            watermark_page = __watermark(width, height)
         new_page = new_page_image(width, height, temp_filename)
         new_page.merge_page(watermark_page)
-        output.add_page(new_page)
-    output_file = f'{target_path}/{filename}'
-    with open(output_file, "wb") as output_stream:
-        output.write(output_stream)
-    print(f'finished {filename}')
+        target_pdf.add_page(new_page)
+        if len(page.images) > 1:
+            i += 1
+    with open(target, "wb") as output_stream:
+        target_pdf.write(output_stream)
+    print(f'finished process {source}')
     os.remove(temp_filename)
-    return temp_filename
 
 
-if __name__ == '__main__':
-    root_path = '/Users/stone-wh/Library/CloudStorage/OneDrive-RoyalUniversityofPhnomPenh/e-library of cambodia/Backup/1_Fonds_Periodicques_Khmer_PDF'
-    path = f"{root_path}/Ready"
-    dirs = os.listdir(path)
-    start = time.time()
-    with multiprocessing.Pool() as pool:
-        items = [(path, dir_name) for dir_name in dirs if dir_name.endswith('.pdf')]
-        for result in pool.starmap(set_watermark, items):
-            print(result)
-    end = time.time()
-    print(end - start)
+def image_to_pdf_with_watermark(source: str, target: str, target_size: int = None):
+    print(f'start process {source}')
+    if not os.path.isdir(source):
+        print(f"Error not folder of {source}")
+        return
+    if not os.path.exists(source):
+        print(f"Error file not found of {source}")
+        return
+    target_pdf = PdfFileWriter()
+    watermark_page = None
+    temp_filename = f'temp/{uuid.uuid4()}.png'
+    images = [image for image in os.listdir(source) if
+              image.endswith('.tif') or image.endswith('.jpg') or image.endswith('.png')]
+    images.sort()
+    for image in images:
+        shutil.copyfile(f'{source}/{image}', temp_filename)
+        if target_size is not None:
+            basic.reduce_size(temp_filename, target_size)
+        width, height = Image.open(temp_filename).size
+        if watermark_page is None:
+            watermark_page = __watermark(width, height)
+        new_page = new_page_image(width, height, temp_filename)
+        new_page.merge_page(watermark_page)
+        target_pdf.add_page(new_page)
+    with open(target, "wb") as output_stream:
+        target_pdf.write(output_stream)
+    print(f'finished process {source}')
+    os.remove(temp_filename)

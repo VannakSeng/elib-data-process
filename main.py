@@ -1,6 +1,10 @@
 import io
 import os
 from PIL import Image
+
+import basic
+import posting_wp
+import watermark
 # from difPy import dif
 
 from basic import get_file_extension, browse_files
@@ -100,3 +104,52 @@ from basic import get_file_extension, browse_files
 #         print('\n')
 # print("Done")
 # reduce_size('S:\\Elib\\5004\\45_2008A.jpg')
+
+
+# def multi_process(dirs: str):
+#     start = time.time()
+#     items = [(path, dir_name) for dir_name in dirs if dir_name.endswith('.pdf')]
+#     with multiprocessing.Pool() as pool:
+#         for result in pool.starmap(reduce_size, items):
+#             print(result)
+#     end = time.time()
+#     print(end - start)
+#
+#
+# def single_process(dirs: str):
+#     items = [(path, dir_name) for dir_name in dirs if dir_name.endswith('.pdf')]
+#     start = time.time()
+#     for item in items:
+#         result = reduce_size(item[0], item[1])
+#         print(result)
+#     end = time.time()
+#     print(end - start)
+
+
+import multiprocessing as mp
+
+root_path = '/Users/stone-wh/Library/CloudStorage/OneDrive-RoyalUniversityofPhnomPenh/e-library of cambodia/Backup'
+target_size = 1000000
+
+
+def image_to_pdf():
+    path = f"{root_path}/P_Fonds Periodic Khmer"
+    folders = basic.browse_folders(path)
+    for folder in folders:
+        sub_folders = basic.browse_folders(folder)
+        for sub_folder in sub_folders:
+            name = str.join(' ', sub_folder.split('/')[-2:])
+            target = f'{path}/{name}.pdf'
+            process = mp.Process(target=watermark.image_to_pdf_with_watermark, args=(sub_folder, target, target_size))
+            process.start()
+
+
+def posting_elib():
+    path = f"{root_path}/P_Fonds Periodic Khmer"
+    files = basic.browse_files(path, endswith=".pdf")
+    for file in files:
+        process = mp.Process(target=posting_wp.post_newspaper, args=(file,))
+        process.start()
+
+if __name__ == '__main__':
+    posting_elib()

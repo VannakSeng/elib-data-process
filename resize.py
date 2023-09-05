@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import os
 from PIL import Image
+from PyPDF2 import PdfReader, PdfWriter
 
 import basic
 
@@ -39,6 +40,17 @@ def reduce_size(
     image.save(f'{directory}/{name}{ext}', format='JPEG', quality=quality)
     if delete:
         os.remove(filename)
+
+
+def resize_pdf(filename: str):
+    reader = PdfReader(filename)
+    writer = PdfWriter()
+    for page in reader.pages:
+        page.compress_content_streams()
+        writer.add_page(page)
+
+    with open(filename, "wb") as f:
+        writer.write(f)
 
 #
 # path = 'C:\\Users\\MSI\\Documents\\tmt-model-managment\\src\\assets\\images'
