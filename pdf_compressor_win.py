@@ -15,7 +15,7 @@ Compression levels:
     4: screen - screen-view-only quality, 72 dpi images
 
 Dependency: Ghostscript.
-On MacOSX install via command line `brew install ghostscript`.
+On Windows install via command line `https://ghostscript.com/releases/gsdnld.html`.
 """
 
 import argparse
