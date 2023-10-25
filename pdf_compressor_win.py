@@ -83,7 +83,6 @@ def get_ghostscript_path():
     raise FileNotFoundError("No GhostScript executable was found on the path.")
 
 
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("input", help="Relative or absolute path of the input PDF file")

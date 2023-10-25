@@ -1,6 +1,6 @@
 import os
 import threading
-from pdf_compressor import compress
+from pdf_compressor_mac import compress
 
 class PdfCompressorThread(threading.Thread):
     def __init__(self, input_path, output_path):
@@ -30,6 +30,8 @@ def compressPdfsInDirectory(folder: str):
 
     for thread in threads:
         thread.join()
+
+    print('Completed...')
 
 if __name__ == '__main__':
     dir = 'data'
