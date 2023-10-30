@@ -31,7 +31,7 @@ def watermarkImagePdfsInDirectory(folder: str):
     for thread in threads:
         thread.join()
 
-    print('Completed. Image2Pdf-Watermark..')
+    print('Completed Image2Pdf-Watermark..')
 
 
 if __name__ == "__main__":
