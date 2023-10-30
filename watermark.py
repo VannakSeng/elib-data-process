@@ -42,8 +42,7 @@ def pdf_set_watermark(source: str, target: str, target_size: int = None):
         if target_size is not None:
             basic.reduce_size(temp_filename, target_size)
         width, height = Image.open(temp_filename).size
-        if watermark_page is None:
-            watermark_page = __watermark(width, height)
+        watermark_page = __watermark(width, height)
         new_page = new_page_image(width, height, temp_filename)
         new_page.merge_page(watermark_page)
         target_pdf.add_page(new_page)
@@ -83,8 +82,7 @@ def image_to_pdf_with_watermark(source: str, target: str, target_size: int = Non
         if target_size is not None:
             basic.reduce_size(temp_filename, target_size)
         width, height = Image.open(temp_filename).size
-        if watermark_page is None:
-            watermark_page = __watermark(width, height)
+        watermark_page = __watermark(width, height)
         new_page = new_page_image(width, height, temp_filename)
         new_page.merge_page(watermark_page)
         target_pdf.add_page(new_page)
