@@ -32,6 +32,7 @@ def pdf_set_watermark(source: str, target: str, target_size: int = None):
         return
     source_pdf = PdfReader(open(source, "rb"), strict=False)
     target_pdf = PdfWriter()
+    os.makedirs('temp', exist_ok=True)
     watermark_page = None
     i = 0
     temp_filename = f'temp/{uuid.uuid4()}.png'

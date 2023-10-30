@@ -35,6 +35,6 @@ def watermarkPdfsInDirectory(folder: str):
 
 
 if __name__ == "__main__":
-    dir = "data"
+    dir = "data/file1"
     watermarkPdfsInDirectory(dir)
 
