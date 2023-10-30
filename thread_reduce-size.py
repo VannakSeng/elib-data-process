@@ -31,7 +31,7 @@ def compressPdfsInDirectory(folder: str):
     for thread in threads:
         thread.join()
 
-    print('Completed...')
+    print('Completed Compress PDF...')
 
 if __name__ == '__main__':
     dir = 'data'

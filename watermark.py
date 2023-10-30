@@ -3,7 +3,7 @@ import os
 import shutil
 
 from PIL import Image
-from PyPDF2 import PageObject, PdfFileReader, PdfFileWriter
+from PyPDF2 import PageObject, PdfReader, PdfWriter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 import uuid
@@ -18,30 +18,20 @@ def __watermark(w: float, h: float) -> PageObject:
     can.drawString(w / 2 - (w * 0.1865), h / 2, "www.elibraryofcambodia.org")
     can.save()
     packet.seek(0)
-    result = PdfFileReader(packet).pages[0]
+    result = PdfReader(packet).pages[0]
     return result
-
-
-def new_page_image(w: float, h: float, path: str) -> PageObject:
-    packet = io.BytesIO()
-    can = canvas.Canvas(packet, pagesize=(w, h))
-    img = ImageReader(path)
-    can.drawImage(img, 0, 0, w, h)
-    can.save()
-    packet.seek(0)
-    return PdfFileReader(packet).pages[0]
 
 
 def pdf_set_watermark(source: str, target: str, target_size: int = None):
     print(f'start process {source}')
     if not source.endswith('.pdf'):
-        print(f"Error not PDF file of {source}")
+        print(f"Error not PDF file of {source}\n")
         return
     if not os.path.exists(source):
         print(f"Error file not found of {source}")
         return
-    source_pdf = PdfFileReader(open(source, "rb"), strict=False)
-    target_pdf = PdfFileWriter()
+    source_pdf = PdfReader(open(source, "rb"), strict=False)
+    target_pdf = PdfWriter()
     watermark_page = None
     i = 0
     temp_filename = f'temp/{uuid.uuid4()}.png'
@@ -64,15 +54,24 @@ def pdf_set_watermark(source: str, target: str, target_size: int = None):
     os.remove(temp_filename)
 
 
+def new_page_image(w: float, h: float, path: str) -> PageObject:
+    packet = io.BytesIO()
+    can = canvas.Canvas(packet, pagesize=(w, h))
+    img = ImageReader(path)
+    can.drawImage(img, 0, 0, w, h)
+    can.save()
+    packet.seek(0)
+    return PdfReader(packet).pages[0]
+
 def image_to_pdf_with_watermark(source: str, target: str, target_size: int = None):
     print(f'start process {source}')
     if not os.path.isdir(source):
-        print(f"Error not folder of {source}")
+        print(f"Error not a folder of {source}")
         return
     if not os.path.exists(source):
         print(f"Error file not found of {source}")
         return
-    target_pdf = PdfFileWriter()
+    target_pdf = PdfWriter()
     watermark_page = None
     temp_filename = f'temp/{uuid.uuid4()}.png'
     images = [image for image in os.listdir(source) if
@@ -88,7 +87,13 @@ def image_to_pdf_with_watermark(source: str, target: str, target_size: int = Non
         new_page = new_page_image(width, height, temp_filename)
         new_page.merge_page(watermark_page)
         target_pdf.add_page(new_page)
-    with open(target, "wb") as output_stream:
+    with open(target + ".pdf", "wb") as output_stream:
         target_pdf.write(output_stream)
     print(f'finished process {source}')
     os.remove(temp_filename)
+
+
+if __name__ == "__main__":
+    source_file = "data/EFEO B110.VII ភិក្ខុបាដិមោក្ខ.pdf"
+    target_file = "output.pdf"
+    pdf_set_watermark(source_file, target_file, target_size=None)
