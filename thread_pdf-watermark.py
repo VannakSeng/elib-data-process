@@ -1,17 +1,21 @@
 import os
 import threading
-from watermark import pdf_set_watermark
+from watermark import pdf_set_watermark, pdf_set_watermark_JBIG2Decode
 
 class PdfWatermark(threading.Thread):
-    def __init__(self, input_path, output_path):
+    def __init__(self, input_path, output_path, isJBIG2Decode=False):
         super().__init__()
         self.input_path = input_path
         self.output_path = output_path
+        self.isJBIG2Decode = isJBIG2Decode
 
     def run(self):
-        pdf_set_watermark(self.input_path, self.output_path)
+        if self.isJBIG2Decode is True:
+            pdf_set_watermark_JBIG2Decode(self.input_path, self.output_path)
+        else:
+            pdf_set_watermark(self.input_path, self.output_path)
 
-def watermarkPdfsInDirectory(folder: str):
+def watermarkPdfsInDirectory(folder: str, isJBIG2Decode):
     if not os.path.exists(f'{folder}/output'):
         os.makedirs(f'{folder}/output')
     pdfs_path = [pdf for pdf in os.listdir(folder) if not pdf.startswith('.')]
@@ -22,7 +26,7 @@ def watermarkPdfsInDirectory(folder: str):
     for path in pdfs_path:
         input_path = f'{folder}/{path}'
         output_path = f'{folder}/output/{path}'
-        thread = PdfWatermark(input_path, output_path)
+        thread = PdfWatermark(input_path, output_path, isJBIG2Decode)
         threads.append(thread)
 
     for thread in threads:
@@ -35,6 +39,6 @@ def watermarkPdfsInDirectory(folder: str):
 
 
 if __name__ == "__main__":
-    dir = "data/file1"
-    watermarkPdfsInDirectory(dir)
+    dir = "data"
+    watermarkPdfsInDirectory(dir, isJBIG2Decode=False)
 
