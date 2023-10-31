@@ -6,6 +6,8 @@ from PIL import Image
 from PyPDF2 import PageObject, PdfReader, PdfWriter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import utils
 from pdf2image import convert_from_path
 import uuid
 import basic
@@ -118,40 +120,47 @@ def new_page_image(w: float, h: float, path: str) -> PageObject:
     packet.seek(0)
     return PdfReader(packet).pages[0]
 
+
+
 def image_to_pdf_with_watermark(source: str, target: str, target_size: int = None):
     current_datetime = datetime.now()
     formatted_datetime = current_datetime.strftime("%Y-%b-%d %I:%M%p")
     print(f'{formatted_datetime} : start process {source}')
+
     if not os.path.isdir(source):
         print(f"Error not a folder of {source}")
         return
     if not os.path.exists(source):
         print(f"Error file not found of {source}")
         return
+
     target_pdf = PdfWriter()
     watermark_page = None
     temp_filename = f'temp/{uuid.uuid4()}.png'
-    images = [image for image in os.listdir(source) if
-              image.endswith('.tif') or image.endswith('.jpg') or image.endswith('.png')]
+    images = [image for image in os.listdir(source) if image.endswith('.tif') or image.endswith('.jpg') or image.endswith('.png')]
     images.sort()
+
     for image in images:
         shutil.copyfile(f'{source}/{image}', temp_filename)
+
         if target_size is not None:
             basic.reduce_size(temp_filename, target_size)
-        width, height = Image.open(temp_filename).size
-        watermark_page = __watermark(width, height)
-        new_page = new_page_image(width, height, temp_filename)
+        img = utils.ImageReader(temp_filename)
+        width, height = img.getSize()
+        img_width = 595
+        img_height = height * img_width / width
+        watermark_page = __watermark(img_width, img_height)
+        new_page = new_page_image(img_width, img_height, temp_filename)
         new_page.merge_page(watermark_page)
         target_pdf.add_page(new_page)
+
     with open(target + ".pdf", "wb") as output_stream:
         target_pdf.write(output_stream)
+
     current_datetime = datetime.now()
     formatted_datetime = current_datetime.strftime("%Y-%b-%d %I:%M%p")
     print(f'{formatted_datetime} : finished process {source} at ')
     os.remove(temp_filename)
 
-
 if __name__ == "__main__":
-    source_file = "data/image3.001.pdf"
-    target_file = "data/image3.001.output.pdf"
-    pdf_set_watermark(source_file, target_file, target_size=None)
+    image_to_pdf_with_watermark('data1', 'output_.pdf')
