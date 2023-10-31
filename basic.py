@@ -72,6 +72,7 @@ def save_pdf_cover(filename: str, page_index: int = 0) -> str:
         alpha=True,
         annots=True)
     # new_filename = filename.replace('.pdf', '.png')
+    os.makedirs('temp', exist_ok=True)
     new_filename = f'temp/{uuid.uuid4()}.png'
     pix.save(new_filename)
     return new_filename
