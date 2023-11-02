@@ -62,7 +62,7 @@ def pdf_set_watermark(source: str, target: str, target_size: int = None):
     os.remove(temp_filename)
 
 
-def pdf_set_watermark_JBIG2Decode(source: str, target: str, target_size: int = None):
+def pdf_set_watermark_JBIG2DecodeMac(source: str, target: str, target_size: int = None):
     current_datetime = datetime.now()
     formatted_datetime = current_datetime.strftime("%Y-%b-%d %I:%M%p")
     print(f'{formatted_datetime} : start process {source}')
@@ -110,6 +110,60 @@ def pdf_set_watermark_JBIG2Decode(source: str, target: str, target_size: int = N
     formatted_datetime = current_datetime.strftime("%Y-%b-%d %I:%M%p")
     print(f'{formatted_datetime} : finished process {source} at ')
     os.remove(temp_filename)
+
+
+def pdf_set_watermark_JBIG2DecodeWin(source: str, target: str, target_size: int = None):
+    current_datetime = datetime.now()
+    formatted_datetime = current_datetime.strftime("%Y-%b-%d %I:%M%p")
+    print(f'{formatted_datetime} : start process {source}')
+
+    if not source.endswith('.pdf'):
+        print(f"Error: Not a PDF file: {source}\n")
+        return
+
+    if not os.path.exists(source):
+        print(f"Error: File not found: {source}")
+        return
+
+    source_pdf = PdfReader(open(source, "rb"), strict=False)
+    target_pdf = PdfWriter()
+    os.makedirs('temp', exist_ok=True)
+
+    for page_number, page in enumerate(source_pdf.pages, start=1):
+        if '/Resources' in page and '/XObject' in page['/Resources']:
+            xobject = page['/Resources']['/XObject'].get_object()
+            if xobject is not None:
+                for obj in xobject:
+                    x_object = xobject[obj]
+                    if '/Filter' in x_object.get_object() and x_object.get_object()['/Filter'] == '/JBIG2Decode':
+                        continue  # Skip pages with unsupported filter
+
+        temp_filename = f'temp/{uuid.uuid4()}.png'
+
+        # Convert the page to an image (PNG) using pdf2image
+        images = convert_from_path(source, first_page=page_number, last_page=page_number)
+        if images:
+            images[0].save(temp_filename, 'PNG')
+
+        if target_size is not None:
+            basic.reduce_size(temp_filename, target_size)
+
+        width, height = Image.open(temp_filename).size
+        watermark_page = __watermark(width, height)
+        new_page = Image.new("RGB", (width, height))
+        new_page.paste(Image.open(temp_filename), (0, 0))
+        new_page.paste(watermark_page, (0, 0), watermark_page)
+        new_page.save(temp_filename, 'PNG')
+
+        target_pdf.add_page(page)
+        os.remove(temp_filename)
+
+    with open(target, "wb") as output_stream:
+        target_pdf.write(output_stream)
+
+    current_datetime = datetime.now()
+    formatted_datetime = current_datetime.strftime("%Y-%b-%d %I:%M%p")
+    print(f'{formatted_datetime} : finished process {source} at ')
 
 def new_page_image(w: float, h: float, path: str) -> PageObject:
     packet = io.BytesIO()
